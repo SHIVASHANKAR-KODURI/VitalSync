@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>VitalSync Health App - Gemini Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* --- NEW PROFESSIONAL COLOR PALETTE (Coral/Salmon) --- */
+        :root {
+            --color-primary: #FF8A65; /* Coral */
+            --color-primary-dark: #E67C5E;
+            --color-primary-light: #FFECE9;
+            --color-primary-lightest: #FFF8F6;
+            
+            /* Dark Mode Colors - Adjusted */
+            --color-bg-dark: #121212;
+            --color-sidebar-dark: #545454;
+            --color-card-dark: #2C2C2C;
+            --color-text-dark: #E0E0E0;
+            --color-subtext-dark: #A0A0A0;
+            --color-border-dark: #333333;
+            --color-input-dark: #2C2C2C;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            transition: all 150ms ease-in-out;
+            background-color: white;
+            color: #1f2937;
+        }
+        .input-field:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255, 138, 101, 0.5);
+            border-color: var(--color-primary);
+        }
+        .dark .input-field {
+            background-color: var(--color-input-dark);
+            border-color: var(--color-border-dark);
+            color: var(--color-text-dark);
+        }
+
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+            transition: background-color 150ms ease-in-out, box-shadow 150ms ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary:hover {
+            background-color: var(--color-primary-dark);
+        }
+        .dashboard-card {
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f3f4f6;
+            background-color: white;
+            color: #1f2937;
+            transition: background-color 300ms ease-in-out, color 300ms ease-in-out, border-color 300ms ease-in-out;
+        }
+        .dark .dashboard-card {
+            background-color: var(--color-card-dark);
+            border-color: var(--color-border-dark);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1); 
+            color: var(--color-text-dark);
+        }
+
+        .upload-box { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem; border:2px dashed #d1d5db; border-radius:0.75rem; text-align:center; cursor:pointer; transition:border-color 150ms ease-in-out; }
+        .upload-box:hover { border-color: var(--color-primary); }
+        .dark .upload-box { border-color: var(--color-border-dark); }
+        .dark .upload-box:hover { border-color: var(--color-primary); }
+
+        .chat-container { height: calc(100vh - 200px); }
+        .chat-bubble { max-width: 80%; padding: 0.75rem; border-radius: 0.75rem; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); font-size: 1rem; }
+        .agent { background-color: #e5e7eb; color: #1f2937; border-top-left-radius: 0.25rem; margin-right:auto; transition: background-color 300ms ease-in-out, color 300ms ease-in-out; }
+        .dark .agent { background-color: #333333; color: var(--color-text-dark); }
+        .user { background-color: var(--color-primary); color: white; border-top-right-radius: 0.25rem; margin-left:auto; }
+
+        .typing-dot { display:inline-block; width:8px; height:8px; background-color:#1f2937; border-radius:50%; margin:0 2px; animation:bounce 1.4s infinite ease-in-out both; }
+        .dark .typing-dot { background-color: var(--color-text-dark); }
+        @keyframes bounce { 0%,80%,100%{transform:scale(0);} 40%{transform:scale(1.0);} }
+
+        .range-slider { width:100%; height:8px; background:#ddd; border-radius:4px; outline:none; opacity:0.7; transition:opacity .2s; }
+        .range-slider::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%; background:var(--color-primary); cursor:pointer; }
+        .range-slider::-moz-range-thumb { width:18px; height:18px; border-radius:50%; background:var(--color-primary); cursor:pointer; }
+
+        .ai-summary { white-space: pre-wrap; word-break: break-word; line-height: 1.55; font-size: 0.98rem; padding: 1rem; border-radius: 0.5rem; background: linear-gradient(180deg, #ffffff, #fffaf6); border: 1px solid rgba(226, 124, 94, 0.08); color: #1f2937; max-height:420px; overflow:auto; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; hyphens:auto; }
+        .dark .ai-summary { background: linear-gradient(180deg, #2c2c2c, #272727); border-color: rgba(255, 138, 101, 0.06); color: var(--color-text-dark); }
+        .ai-summary code { background: rgba(0,0,0,0.04); padding: 0.05rem 0.25rem; border-radius:0.25rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; font-size:0.92em;}
+        .ai-summary strong { font-weight:700; color:#E67C5E; }
+
+        .dark body { background-color: var(--color-bg-dark); }
+        .dark #main-content { background-color: var(--color-bg-dark); color: var(--color-text-dark); }
+        .dark .text-gray-900 { color: var(--color-text-dark) !important; }
+        .dark .text-gray-800 { color: var(--color-text-dark) !important; }
+        .dark .text-gray-700 { color: var(--color-text-dark) !important; }
+        .dark .text-gray-600 { color: var(--color-subtext-dark) !important; }
+        .dark .text-gray-500 { color: var(--color-subtext-dark) !important; }
+        .dark .bg-gray-50 { background-color: var(--color-bg-dark); }
+        .dark .bg-white { background-color: var(--color-card-dark); }
+        .dark .bg-gray-100 { background-color: #333333; }
+        .dark .hover\:bg-gray-200:hover { background-color: #444444; }
+        .dark .border-gray-100, .dark .border-gray-200, .dark .border-gray-300 { border-color: var(--color-border-dark); }
+        .dark .shadow-md, .dark .shadow-lg, .dark .shadow-xl, .dark .shadow-2xl { box-shadow: none; }
+        .dark #sidebar { background-color: var(--color-sidebar-dark); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .dark #sidebar .text-gray-600 { color: var(--color-subtext-dark); }
+        .dark #sidebar .hover\:bg-gray-100:hover { background-color: #333333; }
+
+        #main-content .text-gray-900 { color: #1f2937; }
+        #main-content .text-gray-800 { color: #1f2937; }
+        #main-content .text-gray-700 { color: #374151; }
+        #main-content .text-gray-600 { color: #4b5563; }
+        #main-content .text-gray-500 { color: #6b7280; }
+        .dark #main-content .text-gray-900, .dark #main-content .text-gray-800, .dark #main-content .text-gray-700 { color: var(--color-text-dark); }
+        .dark #main-content .text-gray-600, .dark #main-content .text-gray-500 { color: var(--color-subtext-dark); }
+
+        /* small table tweaks */
+        .dayinfo-table th, .dayinfo-table td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid #e6e6e6; }
+        .dark .dayinfo-table th, .dark .dayinfo-table td { border-color: #444; }
+    </style>
+</head>
+<body class="bg-gray-50 transition-colors duration-300">
+    <div id="app" class="flex flex-col min-h-screen font-sans">
+    </div>
+
+<script>
+    // --- Add this: default system prompt generator ---
+    function createReportSystemPrompt() {
+    return `You are VitalSync, a concise health-assistant. When generating a report:
+    - Start with a short summary (1–2 sentences).
+    - Show clear headings (Summary, Key Findings, Advice).
+    - Use bullet points for recommendations and next steps.
+    - Keep language simple and actionable for non-medical readers.`;
+    }
+
+    // --- 0. API CONFIGURATION ---
+    const GEMINI_API_KEY = "AIzaSyCTqmygM49VRWUGkL1UNHtUNZZhSoL0-yQ";
+    const CHAT_MODEL = "gemini-2.5-flash";
+    const VISION_MODEL = "gemini-2.5-flash";
+
+    // --- 1. GLOBAL STATE & UTILITIES ---
+
+    const requiredFields = ['sleep_hrs', 'breakfast', 'lunch', 'dinner', 'walk_km', 'mood'];
+    const shortLabels = {
+        date: 'Date',
+        sleep_hrs: 'Sleep',
+        breakfast: 'BF',
+        lunch: 'Lunch',
+        dinner: 'Dinner',
+        walk_km: 'Walk(km)',
+        mood: 'Mood'
+    };
+
+    let dailyLog = {};
+    let currentQuestionIndex = 0;
+    let conversationHistory = [];
+    let currentReportFileBase64 = null;
+    let currentReportMimeType = null;
+
+    let appState = {
+        currentPage: 'login',
+        chatHistory: [],
+        dashboard: {
+            userName: "Shankar",
+            insights: [],
+            isDarkMode: false
+        },
+        reports: [],
+        chat: { isAgentTyping: false },
+        upload: { state: 'initial', fileName: '', progress: 0, summary: '', isSummarizing: false },
+        weeklyData: [],
+        history: { // NEW STATE BLOCK FOR HISTORY PAGE
+            currentInsight: null, // For Daily Insight
+            currentWeeklyReport: null, // For Weekly Report
+            isGeneratingReport: false,
+        }
+    };
+
+    const STORAGE_KEY = 'vitalsync_daily_data';
+
+    // Refactored to enforce the 7-day constraint
+    function loadWeeklyData() {
+        try {
+            const data = localStorage.getItem(STORAGE_KEY);
+            let loadedData = data ? JSON.parse(data) : [];
+
+            // 1. Sort by date (oldest first)
+            loadedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+            // 2. Keep only the last 7 entries to satisfy the "for a week" constraint.
+            // This ensures old data is eventually pruned and only the last week is kept.
+            if (loadedData.length > 7) {
+                loadedData = loadedData.slice(-7);
+            }
+
+            appState.weeklyData = loadedData;
+            saveWeeklyData(); // Save the trimmed version immediately
+        } catch (error) {
+            console.error("Error loading data from Local Storage:", error);
+            appState.weeklyData = [];
+        }
+    }
+    
+    function saveWeeklyData() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState.weeklyData));
+        } catch (error) {
+            console.error("Error saving data to Local Storage:", error);
+        }
+    }
+
+    function resetChat(forceStart = false) {
+        dailyLog = {};
+        conversationHistory = [];
+        currentQuestionIndex = 0;
+
+        const today = new Date().toISOString().slice(0, 10);
+        const isTodayLogged = appState.weeklyData.some(log => log.date === today);
+
+        if (isTodayLogged && !forceStart) {
+            setState({
+                chatHistory: [
+                    { id: 1, sender: 'agent', text: "It looks like you've already completed your Daily Check-in today! Use 'Clear Today's Entry' to remove it and re-enter." }
+                ]
+            });
+        } else {
+            const questionText = getQuestionText(requiredFields[currentQuestionIndex]);
+            const initialMessage = { id: 1, sender: 'agent', text: questionText };
+            conversationHistory.push({ role: "model", parts: [{ text: questionText }] });
+            setState({ chatHistory: [initialMessage] });
+        }
+    }
+
+
+    function setState(newState, subStateKey = null) {
+        if (subStateKey && appState.hasOwnProperty(subStateKey)) {
+            // merge into the sub-state object
+            appState[subStateKey] = { ...appState[subStateKey], ...newState };
+        } else {
+            // merge into the top-level appState
+            appState = { ...appState, ...newState };
+        }
+        renderApp();
+    }
+
+
+    function navigateTo(page) {
+        if (page === 'dashboard') {
+            initializeAppState();
+        }
+        // FIX: Ensure chat state is synchronously reset when navigating to chat.
+        // This forces an immediate re-check of the date, fixing the blocked chat on a new day.
+        if (page === 'chat') {
+            setState({ currentPage: page });
+            // We can call resetChat synchronously as it only contains local logic and state updates
+            resetChat(); 
+            return;
+        }
+        if (page === 'upload-report') {
+             setState({ state: 'initial', fileName: '', progress: 0, summary: '', isSummarizing: false }, 'upload');
+        }
+        if (page === 'history') { 
+            setState({ currentInsight: null, currentWeeklyReport: null }, 'history');
+        }
+        setState({ currentPage: page });
+    }
+
+    // Build agent prompt; updated to reflect new fields
+    function createChatSystemPrompt(isInitial = false) {
+        const remainingFields = requiredFields.filter(field => !(field in dailyLog));
+        let prompt = "You are the VitalSync Agent, a friendly, non-judgemental health companion. Guide the user through a structured daily check-in to collect health metrics. ";
+        if (isInitial) {
+            prompt += `Start by asking the **first question**: **${requiredFields[0]}**. Ask only one question at a time.`;
+        } else if (remainingFields.length > 0) {
+            prompt += `Confirm the user's input and then ask the next structured question: **${remainingFields[0]}**. Ask only one question at a time.`;
+        } else {
+            prompt += `All required data collected. Thank the user and confirm the check-in is complete.`;
+        }
+        prompt += ` The required metrics in order are: ${requiredFields.join(', ')}.`;
+        return prompt;
+    }
+
+    // Gemini call remains unchanged (FIXED: Reverted system instruction to config block)
+    async function callGeminiApi(prompt, history, systemPromptFunction = createChatSystemPrompt) {
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${CHAT_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+        
+        // Use history for multi-turn chat, or only the prompt for single-turn reports
+        const contents = history.map(item => ({ role: item.role, parts: item.parts }));
+        if (prompt) contents.push({ role: "user", parts: [{ text: prompt }] });
+
+        let systemInstructionText = "";
+        if (typeof systemPromptFunction === "function") {
+          try {
+            systemInstructionText = systemPromptFunction();
+          } catch (e) {
+            console.warn("System prompt function failed, using empty string.", e);
+          }
+        }
+
+        // --- FIX: Correcting API payload structure ---
+        const payload = {
+            contents: contents,
+            // System instruction is now a top-level property
+            ...(systemInstructionText && { systemInstruction: { parts: [{ text: systemInstructionText }] } }), 
+            // 'config' is replaced with 'generationConfig' for model parameters.
+            generationConfig: {
+                temperature: 0.1
+            }
+        };
+        // ---------------------------------------------
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorBody = await response.json().catch(() => ({ message: 'Invalid JSON in error response' }));
+                console.error("Gemini API Error Response:", errorBody);
+                let errMsg = `API call failed with status ${response.status}.`;
+                if (response.status === 400) errMsg = "Bad Request (400) — check the request shape and prompt.";
+                else if (response.status === 403) errMsg = "Permission denied (403) — check API key/restrictions.";
+                throw new Error(errMsg);
+            }
+
+            const data = await response.json();
+            const agentText = data.candidates?.[0]?.content?.parts?.[0]?.text
+                                 || "Sorry, I ran into an error generating a response.";
+            return agentText;
+        } catch (error) {
+            console.error("Gemini API call failed:", error);
+            throw error; // rethrow so callers can show friendly UI text
+        }
+    }
+
+    // Vision call remains unchanged
+    async function callGeminiVisionApi(base64Image, mimeType) {
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${VISION_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+        const systemPrompt = `You are the VitalSync Health Report Analyst. Analyze the provided clinical image or PDF report. Summarize the key findings, focusing on out-of-range values or critical results. Provide a brief, easy-to-understand explanation of what these findings might mean, and suggest one non-medical action the user can take (e.g., talk to a doctor, log mood). Do not provide medical advice. Structure the response clearly and concisely.`;
+        const contents = [
+            // Passing system prompt as the first part of the contents array for simplicity
+            { role: "user", parts: [ { text: systemPrompt }, { inlineData: { mimeType: mimeType, data: base64Image.split(',')[1] } } ] }
+        ];
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: contents })
+            });
+            if (!response.ok) {
+                const errorBody = await response.json();
+                console.error("Gemini Vision API Error Response:", errorBody);
+                let errorMessage = `API call failed (Status ${response.status}).`;
+                if (response.status === 400) errorMessage = "Bad Request (400). Ensure the image is JPG/PNG and the API key is valid.";
+                else if (response.status === 403) errorMessage = "Permission denied (403). Ensure API key is not restricted.";
+                throw new Error(errorMessage);
+            }
+            const data = await response.json();
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || "Analysis failed. Could not extract text or generate summary.";
+        } catch (error) {
+            console.error("Gemini Vision API call failed:", error);
+            return `Analysis failed: ${error.message}`;
+        }
+    }
+
+    // NEW: Function to generate specific health reports (Daily or Weekly)
+    async function generateHealthReport(type) {
+        if (appState.history.isGeneratingReport) return;
+        
+        // Clear previous report and set loading state
+        setState({ isGeneratingReport: true, currentInsight: null, currentWeeklyReport: null }, 'history');
+
+        let data = appState.weeklyData.slice(-7); // Last 7 days, as requested by user
+        let prompt = "";
+        let reportTitle = "";
+        let finalReportKey = null;
+
+        if (type === 'daily') {
+            const today = new Date().toISOString().slice(0, 10);
+            const todayLog = appState.weeklyData.find(l => l.date === today);
+            
+            if (!todayLog) {
+                 setState({ isGeneratingReport: false, currentInsight: { title: "Daily Insight Error", text: "Error: Today's entry not found. Please complete the daily check-in first in the 'Daily Check-in' tab." } }, 'history');
+                 return;
+            }
+            
+            reportTitle = `Today's Insight (${today})`;
+            // Only pass the analysis task and data, the persona is handled by createReportSystemPrompt
+            prompt = `Analyze the user's daily check-in data for today: ${JSON.stringify(todayLog)}. Provide a concise, actionable report. Focus on the most significant data point (e.g., low sleep, specific meal, or low activity) and give one tangible, easy-to-follow recommendation to improve their health tomorrow based on that data.`;
+            finalReportKey = 'currentInsight';
+            
+        } else if (type === 'weekly') {
+            if (data.length < 2) {
+                setState({ isGeneratingReport: false, currentWeeklyReport: { title: "Weekly Report Error", text: "Need at least 2 days of check-in data for a meaningful weekly report. Please log more days." } }, 'history');
+                return;
+            }
+            reportTitle = `Weekly Health Report (Last ${data.length} Days)`;
+            
+            // Only pass the analysis task and data, the persona is handled by createReportSystemPrompt
+            prompt = `Analyze the following health logs for the last ${data.length} days: ${JSON.stringify(data)}. Identify 2-3 key trends or correlations between sleep, diet, mood, and activity. Provide a summary of the findings and two strategic, long-term recommendations (using two separate bullet points) for improving overall well-being based on these trends.`;
+            finalReportKey = 'currentWeeklyReport';
+        } else {
+             setState({ isGeneratingReport: false }, 'history');
+             return;
+        }
+
+        try {
+            // Use createReportSystemPrompt for the system instruction when generating reports
+            const insightText = await callGeminiApi(prompt, [], createReportSystemPrompt);
+            
+            const newReport = {
+                id: Date.now(),
+                title: reportTitle,
+                text: insightText,
+                type: type
+            };
+            
+            // Update the correct state key
+            if (finalReportKey === 'currentInsight') {
+                setState({ currentInsight: newReport, currentWeeklyReport: null, isGeneratingReport: false }, 'history');
+            } else if (finalReportKey === 'currentWeeklyReport') {
+                 setState({ currentWeeklyReport: newReport, currentInsight: null, isGeneratingReport: false }, 'history');
+            }
+            
+            // If it's the daily insight, update the dashboard's recent insights list
+             if (type === 'daily') {
+                 const newInsight = { id: Date.now(), type: "Today's Insight", text: insightText };
+                 setState({ insights: [newInsight] }, 'dashboard');
+             }
+            
+        } catch (error) {
+             const errorMessage = `Failed to generate report: ${error.message || 'Unknown API Error'}`;
+             if (finalReportKey === 'currentInsight') {
+                 setState({ currentInsight: { title: "Analysis Failed", text: errorMessage }, isGeneratingReport: false }, 'history');
+             } else if (finalReportKey === 'currentWeeklyReport') {
+                 setState({ currentWeeklyReport: { title: "Analysis Failed", text: errorMessage }, isGeneratingReport: false }, 'history');
+             }
+        }
+    }
+
+
+    // Helper: friendly question text for each field (used to bootstrap chat)
+    function getQuestionText(fieldKey) {
+        switch (fieldKey) {
+            case 'sleep_hrs': return "How many hours did you sleep last night? (e.g., 7.5)";
+            case 'breakfast': return "What did you have for breakfast? (short answer)";
+            case 'lunch': return "What did you have for lunch? (short answer)";
+            case 'dinner': return "What did you have for dinner? (short answer)";
+            case 'walk_km': return "Approximately how many kilometers did you walk today? (e.g., 2.5)";
+            case 'mood': return "How was your mood today? (veryhappy / happy / neutral / sad / verysad)";
+            default: return "Please provide the requested info.";
+        }
+    }
+
+    // Parse user input into appropriate value for current field
+    function extractDataFromChat(userInput) {
+        const field = requiredFields[currentQuestionIndex];
+        let value = null;
+        const lower = userInput.trim().toLowerCase();
+
+        if (field === 'sleep_hrs' || field === 'walk_km') {
+            const match = lower.match(/(\d+(\.\d+)?)/);
+            if (match) value = parseFloat(match[1]);
+        } else if (field === 'mood') {
+            if (lower.includes('very happy') || lower.includes('veryhappy') || lower.includes('vhappy')) value = 'veryhappy';
+            else if (lower.includes('happy')) value = 'happy';
+            else if (lower.includes('very sad') || lower.includes('verysad') || lower.includes('vsad')) value = 'verysad';
+            else if (lower.includes('sad')) value = 'sad';
+            else value = 'neutral';
+        } else {
+            // breakfast, lunch, dinner: accept short text string (limit to 80 chars)
+            value = userInput.trim().slice(0, 120);
+        }
+
+        return { key: field, value: value };
+    }
+
+    // main agent logic: stores answers, moves to next q, saves final daily log
+    async function processAgentLogic(userInput) {
+        if (currentQuestionIndex < requiredFields.length) {
+            const { key, value } = extractDataFromChat(userInput);
+
+            // If parsing failed for numeric fields, ask user again (do not advance)
+            if (value !== null) {
+                dailyLog[key] = value;
+                currentQuestionIndex++;
+            } else {
+                // invalid parse -> agent will re-prompt via Gemini or local fallback
+            }
+        }
+
+        conversationHistory.push({ role: "user", parts: [{ text: userInput }] });
+
+        if (currentQuestionIndex >= requiredFields.length) {
+            const finalPrompt = createChatSystemPrompt(false);
+            
+            // Save locally first
+            if (!dailyLog.date) dailyLog.date = new Date().toISOString().slice(0, 10);
+            
+            // Replace existing entry for today if present (upsert logic)
+            const today = dailyLog.date;
+            appState.weeklyData = appState.weeklyData.filter(l => l.date !== today);
+            appState.weeklyData.push(dailyLog);
+            
+            // Re-sort and trim to ensure only the last 7 days are saved
+            appState.weeklyData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            if (appState.weeklyData.length > 7) {
+                 appState.weeklyData = appState.weeklyData.slice(-7);
+            }
+            
+            saveWeeklyData();
+
+            // NEW: Trigger Daily Report Generation after successful save (non-blocking)
+            generateHealthReport('daily');
+
+            // Ask the model to generate a final friendly confirmation (non-critical)
+            let finalResponse = "Thanks — your daily check-in is complete. I've saved today's responses.";
+            try {
+                // Use default chat system prompt for conversational turn
+                finalResponse = await callGeminiApi(finalPrompt, conversationHistory, createChatSystemPrompt);
+            } catch (e) {
+                console.warn("Couldn't get final agent text; falling back to default.");
+            }
+            return { agentResponse: finalResponse };
+        } else {
+            // Ask next question (use local friendly question to keep it fast)
+            const nextQ = getQuestionText(requiredFields[currentQuestionIndex]);
+            conversationHistory.push({ role: "model", parts: [{ text: nextQ }] });
+            return { agentResponse: nextQ };
+        }
+    }
+
+    async function generateWeeklyInsight() {
+        const recentData = appState.weeklyData.slice(-7);
+        if (recentData.length < 3) return;
+        const dataString = JSON.stringify(recentData);
+        // This is the dashboard insight - a generic summary, not the detailed report
+        const insightPrompt = `You are a Health Data Analyst AI. Analyze the following 7 days worth of data or fewer if less is available. Provide one short, general insight for the dashboard. Data: ${dataString}`;
+        try {
+            // Use default chat system prompt for general insight
+            const insightText = await callGeminiApi(insightPrompt, [], createChatSystemPrompt);
+            const newInsight = { id: Date.now(), type: recentData.length === 7 ? "Weekly Insight" : "Provisional Insight", text: insightText };
+            setState({ insights: [newInsight] }, 'dashboard');
+        } catch (error) {
+            const fallbackInsight = { id: Date.now(), type: "System Alert", text: "Data collected! Check back later for AI insights." };
+            setState({ insights: [fallbackInsight] }, 'dashboard');
+        }
+    }
+
+    function initializeAppState() {
+        loadWeeklyData();
+        setTimeout(() => {
+            setState({ userName: "Shankar", insights: appState.dashboard.insights }, 'dashboard');
+            if (appState.weeklyData.length > 2) {
+                generateWeeklyInsight();
+            } else {
+                setState({ insights: [{ id: 1, type: "Getting Started Tip", text: "Complete your first three Daily Check-ins to unlock your personalized AI insights!" }] }, 'dashboard');
+            }
+        }, 400);
+        setTimeout(() => { setState({ reports: [] }); }, 800);
+    }
+
+    // --- ICONS ---
+    function VitalSyncLogo() {
+        return `<img src="vitalsync logo white.png" alt="VitalSync Logo" class="mx-auto h-10" onerror="this.src='https://placehold.co/150x40/FF8A65/ffffff?text=VitalSync';" />`;
+    }
+    function DashboardIcon() { return `<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>`; }
+    function ChatIcon() { return `<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>`; }
+    function HistoryIcon() { return `<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`; } // NEW Icon
+    function ReportsIcon() { return `<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>`; }
+    function LogoutIcon() { return `<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>`; }
+    function UploadIcon() { return `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>`; }
+    function UploadBoxIcon() { return `<svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>`; }
+    function SuccessIcon() { return `<svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`; }
+    function SparkleIcon() { return `<svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v2.268l1.91 1.273a1 1 0 01.364 1.364l-1.273 1.91V13a1 1 0 11-2 0v-3.179l-1.273-1.91a1 1 0 01.364-1.364L9 5.268V3a1 1 0 011-1zM5 5.5A1.5 1.5 0 016.5 4h.09a1 1 0 00.707-.293l1.414-1.414a1 1 0 00-1.414-1.414L5.88 2.293A1 1 0 005.172 3H3.5A1.5 1.5 0 002 4.5v1.672a1 1 0 00.293.707l1.414 1.414a1 1 0 001.414-1.414L3.707 6.41A1 1 0 003 5.5V5.5zm10 0A1.5 1.5 0 0013.5 4h-.09a1 1 0 01-.707-.293l-1.414-1.414a1 1 0 111.414-1.414L14.12 2.293A1 1 0 0114.828 3h1.672A1.5 1.5 0 0118 4.5v1.672a1 1 0 01-.293.707l-1.414 1.414a1 1 0 11-1.414-1.414L16.293 6.41A1 1 0 0117 5.5V5.5zM5.172 17a1 1 0 01.707.293l1.414 1.414a1 1 0 01-1.414 1.414L4.464 18.707A1 1 0 013.757 18H2a1.5 1.5 0 01-1.5-1.5v-1.586a1 1 0 01.293-.707l1.414-1.414a1 1 0 011.414 1.414L2.293 15.293A1 1 0 003 16h1.172zm11.192-.293l-1.414-1.414a1 1 0 10-1.414 1.414l1.414 1.414A1 1 0 0015.657 18H17a1.5 1.5 0 001.5-1.5v-1.586a1 1 0 00-.293-.707l-1.414-1.414a1 1 0 10-1.414 1.414l1.414 1.414a1 1 0 01.293.707v.086z" clip-rule="evenodd" /></svg>`; }
+
+    // --- 4. PAGE RENDERERS (updated) ---
+
+    function Sidebar() {
+        const { currentPage } = appState;
+        const linkClass = (page) => `flex items-center px-4 py-3 font-semibold rounded-lg mt-2 transition-colors ${['dashboard', 'chat', 'reports', 'history'].includes(currentPage) && (currentPage === page || (page === 'reports' && currentPage === 'upload-report')) ? 'bg-[#FFECE9] text-[#E67C5E]' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600'}`;
+        return `
+            <aside id="sidebar" class="w-64 bg-gray-300 shadow-md flex-shrink-0 p-4 hidden md:flex flex-col transition-colors duration-300 dark:bg-gray-800">
+                <div class="text-center mb-10 pt-2">
+                    ${VitalSyncLogo()}
+                </div>
+                <nav class="flex-grow">
+                    <a href="#" id="nav-dashboard" class="${linkClass('dashboard')}">
+                        ${DashboardIcon()} Dashboard
+                    </a>
+                    <a href="#" id="nav-chat" class="${linkClass('chat')}">
+                        ${ChatIcon()} Daily Check-in
+                    </a>
+                    <a href="#" id="nav-history" class="${linkClass('history')}">
+                        ${HistoryIcon()} Health History
+                    </a>
+                    <a href="#" id="nav-reports" class="${linkClass('reports')}">
+                        ${ReportsIcon()} Clinical Reports
+                    </a>
+                </nav>
+                <div class="mt-auto">
+                    <a href="#" id="nav-logout" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors dark:text-gray-300 dark:hover:bg-gray-600">
+                        ${LogoutIcon()} Logout
+                    </a>
+                </div>
+            </aside>
+        `;
+    }
+
+    function LoginPage() {
+            return `
+             <div class="flex-grow flex items-center justify-center p-4 bg-gray-50 transition-colors duration-300 dark:bg-gray-800">
+                 <div class="bg-white rounded-xl shadow-lg p-8 max-w-md w-full transition-colors duration-300 dark:bg-gray-700">
+                     <div class="text-center mb-8">
+                         ${VitalSyncLogo()}
+                         <h1 class="text-3xl font-bold text-gray-900 mt-4 dark:text-gray-100">Welcome Back</h1>
+                         <p class="text-gray-500 dark:text-gray-400">Sign in to continue your health journey.</p>
+                     </div>
+                     <form id="login-form">
+                         <div class="mb-4">
+                             <label for="email" class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Email</label>
+                             <input type="email" id="email" class="input-field" placeholder="you@example.com" value="shankarkoduri21@gmail.com" required/>
+                         </div>
+                         <div class="mb-6">
+                             <label for="password" class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Password</label>
+                             <input type="password" id="password" class="input-field" placeholder="••••••••" value="123456" required/>
+                         </div>
+                         <button type="button" id="login-btn" class="w-full btn-primary font-semibold py-3 rounded-lg text-lg">Sign In</button>
+                     </form>
+                     <p class="text-center text-sm text-gray-500 mt-8 dark:text-gray-400">
+                         Don't have an account? <a href="#" id="link-signup" class="font-semibold text-[#FF8A65] hover:underline">Sign Up</a>
+                     </p>
+                 </div>
+             </div>
+        `;
+    }
+
+    function SignupPage() {
+            return `
+             <div class="flex-grow flex items-center justify-center p-4 bg-gray-50 transition-colors duration-300 dark:bg-gray-800">
+                 <div class="bg-white rounded-xl shadow-lg p-8 max-w-md w-full transition-colors duration-300 dark:bg-gray-700">
+                     <div class="text-center mb-8">
+                         ${VitalSyncLogo()}
+                         <h1 class="text-3xl font-bold text-gray-900 mt-4 dark:text-gray-100">Create Your Account</h1>
+                         <p class="text-gray-500 dark:text-gray-400">Start understanding your health story today.</p>
+                     </div>
+                     <form>
+                         <div class="mb-4">
+                             <label for="signup-name" class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Full Name</label>
+                             <input type="text" id="signup-name" class="input-field" value="Shankar" placeholder="Your Name" required/>
+                         </div>
+                         <div class="mb-4">
+                             <label for="signup-email" class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Email</label>
+                             <input type="email" id="signup-email" class="input-field" value="alex@example.com" placeholder="you@example.com" required/>
+                         </div>
+                         <div class="mb-6">
+                             <label for="signup-password" class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Password</label>
+                             <input type="password" id="signup-password" class="input-field" value="123456" placeholder="••••••••" required/>
+                         </div>
+                         <button type="button" id="signup-btn" class="w-full btn-primary font-semibold py-3 rounded-lg text-lg">Create Account</button>
+                     </form>
+                     <p class="text-center text-sm text-gray-500 mt-8 dark:text-gray-400">
+                         Already have an account? <a href="#" id="link-login" class="font-semibold text-[#FF8A65] hover:underline">Sign In</a>
+                     </p>
+                 </div>
+             </div>
+        `;
+    }
+
+    function OTPPage() {
+            return `
+             <div class="flex-grow flex items-center justify-center p-4 bg-gray-50 transition-colors duration-300 dark:bg-gray-800">
+                 <div class="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center transition-colors duration-300 dark:bg-gray-700">
+                     ${VitalSyncLogo()}
+                     <h1 class="text-3xl font-bold text-gray-900 mt-4 dark:text-gray-100">Check Your Email</h1>
+                     <p class="text-gray-500 mb-6 dark:text-gray-400">We've sent a 6-digit security code to your email.</p>
+                     <div class="flex justify-center gap-2 mb-6" id="otp-inputs">
+                         ${[...Array(6)].map((_, i) => `
+                             <input 
+                                 key="${i}" 
+                                 type="text" 
+                                 maxlength="1" 
+                                 id="otp-${i}"
+                                 class="w-14 h-14 text-center text-2xl font-semibold border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF8A65] transition-all dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100" 
+                                 inputmode="numeric"
+                                 onkeyup="moveFocus(this, 'otp-${i+1}')"
+                             />
+                         `).join('')}
+                     </div>
+                     <button type="button" id="verify-otp-btn" class="w-full btn-primary font-semibold py-3 rounded-lg text-lg">Verify Account</button>
+                     <p class="text-center text-sm text-gray-500 mt-6 dark:text-gray-400">
+                         Didn't receive a code? <a href="#" class="font-semibold text-[#FF8A65] hover:underline">Resend</a>
+                     </p>
+                 </div>
+             </div>
+        `;
+    }
+
+   // --- Replace the existing DashboardPage() with this ---
+function DashboardPage() {
+    const { userName, insights, isDarkMode } = appState.dashboard;
+    const insightsHtml = insights.length > 0 ? insights.map(insight => `
+        <div key="${insight.id}" class="p-4 bg-gray-900/40 rounded-md border border-gray-800">
+            <p class="font-semibold text-gray-100">${insight.type}</p>
+            <p class="text-sm text-gray-300 mt-1">"${insight.text}"</p>
+        </div>
+    `).join('') : '<p class="text-gray-400">No insights yet — do three check-ins to unlock AI insights.</p>';
+
+    return `
+        <div>
+            <div class="flex justify-between items-center mb-2">
+                <h1 class="text-4xl font-bold text-gray-900 dark:text-gray-100">Hello, ${userName}</h1>
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5 ${isDarkMode ? 'text-gray-400' : 'text-[#FF8A65]'} transition-colors duration-300" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="dark-mode-checkbox" class="sr-only peer" ${isDarkMode ? 'checked' : ''}>
+                        <div class="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-[#FF8A65] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:w-5 after:h-5 after:rounded-full after:transition-all relative"></div>
+                    </label>
+                </div>
+            </div>
+            <p class="text-lg text-gray-500 dark:text-gray-400 mb-8">Here's your action plan for today.</p>
+
+            <!-- HERO / Command Center -->
+            <div class="dashboard-card p-8 mb-10 shadow-2xl border-l-4 border-l-[#FF8A65]">
+                <h2 class="text-3xl font-bold text-gray-900 mb-3 flex items-center dark:text-gray-100">
+                    <svg class="w-7 h-7 mr-3 text-[#FF8A65]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                    Your AI Health Command Center
+                </h2>
+                <p class="text-gray-600 text-lg dark:text-gray-400">
+                    VitalSync analyzes your daily check-ins and reports to provide tailored forecasts and actionable advice. Use the tabs on the left to log data, track history, and upload clinical reports.
+                </p>
+            </div>
+
+            <!-- TODAY'S FOCUS GRID -->
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 dark:text-gray-100">Today's Focus</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                <!-- CARD 1: Reports & Upload -->
+                <div class="dashboard-card focus-card p-6 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-2xl font-semibold mb-2 dark:text-gray-100">Reports & Upload</h3>
+                        <p class="text-gray-600 mb-4 dark:text-gray-400">Link your latest blood work or scans. Get a Gemini-powered summary and connect data points to your life events.</p>
+                    </div>
+                    <div class="mt-2 flex gap-3">
+                        <button id="reports-upload-btn" class="btn-primary font-semibold py-2 px-4 rounded-lg flex items-center">
+                            ${UploadIcon()} Upload Report
+                        </button>
+                        <button id="reports-upload-btn-main-2" class="w-full hidden"></button>
+                    </div>
+                </div>
+
+                <!-- CARD 2: Daily Check-in -->
+                <div class="dashboard-card focus-card p-6 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-2xl font-semibold mb-2 dark:text-gray-100">Daily Check-in</h3>
+                        <p class="text-gray-600 mb-4 dark:text-gray-400">Your AI journalist is ready to chat. A quick 60-second conversation can uncover valuable insights.</p>
+                    </div>
+                    <div class="mt-2">
+                        <button id="start-chat-btn" class="w-full btn-primary font-semibold py-3 rounded-lg flex items-center justify-center">
+                            Start Conversation
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CARD 3: Recent Insights -->
+                <div class="dashboard-card focus-card p-6 flex flex-col">
+                    <h3 class="text-2xl font-semibold mb-3 dark:text-gray-100">Recent Insights</h3>
+                    <div class="flex-1 space-y-3 overflow-auto" style="max-height:200px;">
+                        ${insightsHtml}
+                    </div>
+                    <div class="mt-4">
+                        <button id="view-insights-btn" class="w-full bg-gray-100 text-gray-800 font-semibold py-2 rounded-lg hover:bg-gray-200 transition-colors dark:bg-gray-600 dark:text-gray-100 dark:hover:bg-gray-500">
+                            View All Insights
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RECENT INSIGHTS AREA (full-width fallback) -->
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 dark:text-gray-100">Recent Insights</h2>
+            <div class="dashboard-card border border-gray-200">
+                <div class="space-y-4">
+                    ${insightsHtml}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+    function ChatPage() {
+        const { chatHistory } = appState;
+        const { isAgentTyping } = appState.chat;
+        const today = new Date().toISOString().slice(0, 10);
+        const isTodayLogged = appState.weeklyData.some(log => log.date === today);
+
+        const isCheckinComplete = isTodayLogged;
+
+        const messagesHtml = chatHistory.map((message) => `
+            <div key="${message.id}" class="flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}">
+                <div class="chat-bubble ${message.sender}">
+                    ${message.text}
+                </div>
+            </div>
+        `).join('');
+
+        const typingIndicatorHtml = isAgentTyping ? `
+            <div class="flex justify-start">
+                <div class="chat-bubble agent">
+                    <div class="flex items-center">
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                    </div>
+                </div>
+            </div>
+        ` : '';
+
+        const inputDisabled = isAgentTyping || isCheckinComplete;
+
+        return `
+            <div class="h-full flex flex-col max-w-4xl mx-auto">
+                <h1 class="text-4xl font-bold text-gray-900 mb-6 dark:text-gray-100">Daily Check-in</h1>
+                <div id="chat-messages" class="flex-grow bg-white rounded-lg shadow-inner p-6 flex flex-col space-y-6 overflow-y-auto chat-container dark:bg-gray-700">
+                    ${messagesHtml}
+                    ${typingIndicatorHtml}
+                    <div id="chat-end-ref"></div>
+                </div>
+                <div class="mt-6 flex items-center gap-3">
+                    <input 
+                        type="text" 
+                        id="user-input"
+                        class="input-field flex-grow text-lg ${inputDisabled ? 'opacity-50 cursor-not-allowed' : ''}" 
+                        placeholder="${isCheckinComplete ? 'Check-in complete for today. Use Clear Today to re-enter.' : 'Type your answer...'}" 
+                        value=""
+                        ${inputDisabled ? 'disabled' : ''}
+                    />
+                    <button id="send-btn" class="btn-primary font-semibold px-6 py-3 rounded-lg ml-3 text-lg ${inputDisabled ? 'opacity-50 cursor-not-allowed' : ''}" ${inputDisabled ? 'disabled' : ''}>Send</button>
+                    ${isCheckinComplete ? `<button id="clear-today-small" class="ml-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-600 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-500">Clear Today's Entry</button>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    // NEW PAGE: Health History and Reports
+    function HistoryPage() {
+        const { currentInsight, currentWeeklyReport, isGeneratingReport } = appState.history;
+        const recentReport = currentInsight || currentWeeklyReport;
+
+        // Build Day Info table rows from weeklyData (latest first)
+        const rows = [...appState.weeklyData].reverse().map(log => {
+            return `<tr>
+                <td class="p-2 text-sm font-medium">${escapeHTML(log.date || '')}</td>
+                <td class="p-2 text-sm">${escapeHTML(String(log.sleep_hrs ?? ''))}</td>
+                <td class="p-2 text-sm">${escapeHTML(log.breakfast ?? '')}</td>
+                <td class="p-2 text-sm">${escapeHTML(log.lunch ?? '')}</td>
+                <td class="p-2 text-sm">${escapeHTML(log.dinner ?? '')}</td>
+                <td class="p-2 text-sm">${escapeHTML(String(log.walk_km ?? ''))}</td>
+                <td class="p-2 text-sm">${escapeHTML(String(log.mood ?? ''))}</td>
+            </tr>`;
+        }).join('');
+
+        const dayInfoTable = `
+            <div class="bg-white rounded-lg shadow p-4 overflow-auto dark:bg-gray-700">
+                <h3 class="font-semibold mb-3 text-gray-800 dark:text-gray-100">Daily Check-in Log (Last 7 Days)</h3>
+                <table class="w-full dayinfo-table">
+                    <thead>
+                        <tr class="text-sm text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-600">
+                            <th class="p-2">Date</th>
+                            <th class="p-2">${shortLabels.sleep_hrs}</th>
+                            <th class="p-2">${shortLabels.breakfast}</th>
+                            <th class="p-2">${shortLabels.lunch}</th>
+                            <th class="p-2">${shortLabels.dinner}</th>
+                            <th class="p-2">${shortLabels.walk_km}</th>
+                            <th class="p-2">${shortLabels.mood}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows || `<tr><td class="p-2 text-sm text-gray-500" colspan="7">No day info yet. Do a Daily Check-in to create entries.</td></tr>`}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        const reportContent = recentReport ? `
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 dark:text-gray-100">${recentReport.title}</h2>
+            <div class="ai-summary" role="article" aria-label="AI-generated report">
+                ${formatAISummary(recentReport.text)}
+            </div>
+        ` : isGeneratingReport ? `
+            <div class="text-center py-10 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div class="animate-pulse text-xl font-semibold text-[#FF8A65]">
+                    Generating Report...
+                </div>
+                <p class="text-gray-500 mt-2 dark:text-gray-400">Analyzing ${appState.weeklyData.length} days of data with Gemini Flash.</p>
+            </div>
+        ` : `
+            <div class="text-center py-10 bg-gray-50 dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                <p class="text-gray-500 dark:text-gray-400">Click a button above to generate a specific health report using your logged data.</p>
+            </div>
+        `;
+
+        return `
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900 mb-8 dark:text-gray-100">Health History & Reports</h1>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="dashboard-card lg:col-span-2">
+                        <h2 class="text-2xl font-semibold text-gray-800 mb-4 dark:text-gray-100">Report Generator</h2>
+                        <p class="text-gray-600 mb-4 dark:text-gray-400">Analyze your logged data to find trends and get actionable health advice.</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <button id="generate-daily-btn" class="w-full btn-primary font-semibold py-3 rounded-lg text-lg flex items-center justify-center disabled:opacity-60" ${isGeneratingReport ? 'disabled' : ''}>
+                                ${SparkleIcon()} Generate Today's Insight
+                            </button>
+                            <button id="generate-weekly-btn" class="w-full bg-gray-100 text-gray-800 font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors dark:bg-gray-600 dark:text-gray-100 dark:hover:bg-gray-500 flex items-center justify-center disabled:opacity-60" ${isGeneratingReport ? 'disabled' : ''}>
+                                ${ReportsIcon()} Generate Weekly Report
+                            </button>
+                        </div>
+                        <div class="mt-8">
+                            ${reportContent}
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card flex flex-col justify-between">
+                        <h2 class="text-2xl font-semibold text-gray-800 mb-4 dark:text-gray-100">Quick Data Actions</h2>
+                        <p class="text-gray-600 mb-4 dark:text-gray-400">Manage your daily logs easily.</p>
+                        <button id="history-clear-today-btn" class="w-full btn-primary font-semibold py-3 rounded-lg text-lg">Clear Today's Entry</button>
+                        <button id="history-clear-all-btn" class="mt-3 w-full bg-red-100 text-red-700 font-semibold py-3 rounded-lg hover:bg-red-200 transition-colors dark:bg-red-900 dark:text-red-200">Clear All History</button>
+                    </div>
+                </div>
+
+                ${dayInfoTable}
+            </div>
+        `;
+    }
+
+    function ReportsPage() {
+        const { reports } = appState;
+        if (reports.length === 0) {
+            return `
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900 mb-8 dark:text-gray-100">Clinical Reports</h1>
+                    <div class="bg-white p-12 rounded-xl shadow-lg text-center max-w-2xl mx-auto dark:bg-gray-700">
+                        ${UploadBoxIcon()}
+                        <h3 class="mt-4 text-2xl font-semibold text-gray-800 dark:text-gray-100">No Clinical Reports Found</h3>
+                        <p class="text-gray-500 mt-2 mb-8 dark:text-gray-400">Upload your first clinical report (PDF or Image) to start getting personalized health insights linked to your daily check-ins.</p>
+                        <button id="reports-upload-btn-main" class="btn-primary font-semibold px-8 py-3 rounded-lg flex items-center justify-center mx-auto text-lg">
+                            ${UploadIcon()} Upload New Report
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        const reportsBodyHtml = reports.map((report) => `
+            <tr class="dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors duration-200">
+                <td class="p-4 font-medium text-gray-800 dark:text-gray-100">${report.name}</td>
+                <td class="p-4 text-gray-600 dark:text-gray-400">${report.date}</td>
+                <td class="p-4">
+                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full ${ report.status === 'Current' ? 'text-green-800 bg-green-100' : 'text-gray-800 bg-gray-100 dark:text-gray-300 dark:bg-gray-800' }">
+                        ${report.status}
+                    </span>
+                </td>
+                <td class="p-4">
+                    <button class="text-sm font-medium text-[#FF8A65] hover:text-[#E67C5E]">Toggle Status</button>
+                </td>
+            </tr>
+        `).join('');
+        return `
+            <div>
+                <div class="flex justify-between items-center mb-8">
+                    <h1 class="text-4xl font-bold text-gray-900 dark:text-gray-100">Clinical Reports</h1>
+                    <button id="reports-upload-btn-top" class="btn-primary font-semibold px-5 py-2 rounded-lg flex items-center text-base">
+                        ${UploadIcon()} Upload New Report
+                    </button>
+                </div>
+                <div class="bg-white rounded-lg shadow overflow-hidden dark:bg-gray-700">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 border-b border-gray-200 dark:bg-gray-800 dark:border-gray-600">
+                            <tr>
+                                <th class="p-4 font-semibold text-sm text-gray-600 uppercase tracking-wider dark:text-gray-400">Report Name</th>
+                                <th class="p-4 font-semibold text-sm text-gray-600 uppercase tracking-wider dark:text-gray-400">Date</th>
+                                <th class="p-4 font-semibold text-sm text-gray-600 uppercase tracking-wider dark:text-gray-400">Status</th>
+                                <th class="p-4 font-semibold text-sm text-gray-600 uppercase tracking-wider dark:text-gray-400">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                            ${reportsBodyHtml}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    function UploadReportPage() {
+        const { state, fileName, progress, summary, isSummarizing } = appState.upload;
+        let contentHtml = '';
+        if (state === 'initial') {
+            contentHtml = `
+                <div id="upload-box" class="upload-box">
+                    <input type="file" id="file-input" class="hidden" accept=".pdf,.jpg,.jpeg,.png" />
+                    ${UploadBoxIcon()}
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400"><span class="font-semibold text-[#FF8A65]">Click to upload</span> or drag and drop</p>
+                    <p class="text-xs text-gray-500 mt-1 dark:text-gray-500">PDF, PNG, JPG up to 10MB</p>
+                </div>
+            `;
+        } else if (state === 'progress') {
+            contentHtml = `
+                <div>
+                    <p class="text-center font-semibold text-gray-800 mb-4 dark:text-gray-100">${fileName}</p>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600">
+                        <div class="h-2.5 rounded-full" style="width: ${progress}%; background-color: var(--color-primary);"></div>
+                    </div>
+                    <p class="text-center text-sm text-gray-500 mt-2 dark:text-gray-400">Uploading... ${progress}%</p>
+                </div>
+            `;
+        } else if (state === 'success') {
+            const summaryHtml = summary ? `
+                <div class="mt-6 text-left p-4 rounded-lg">
+                    <h4 class="font-bold text-lg text-gray-800 mb-2 dark:text-gray-100">AI Summary</h4>
+                    <div class="ai-summary" role="article" aria-label="AI-generated summary">
+                        ${formatAISummary(summary)}
+                    </div>
+                </div>
+            ` : '';
+            contentHtml = `
+                <div class="text-center">
+                    <div class="mx-auto bg-green-100 rounded-full h-16 w-16 flex items-center justify-center">
+                        ${SuccessIcon()}
+                    </div>
+                    <h3 class="mt-4 text-2xl font-semibold text-gray-800 dark:text-gray-100">Upload Successful!</h3>
+                    <p class="text-gray-600 mt-2 dark:text-gray-400">Your report has been securely uploaded. Let our AI summarize it for you.</p>
+                    <div class="mt-6">
+                        <button id="summarize-btn" ${isSummarizing ? 'disabled' : ''} class="w-full btn-primary font-semibold py-3 rounded-lg text-lg flex items-center justify-center disabled:opacity-60">
+                            ${SparkleIcon()}
+                            ${isSummarizing ? 'Analyzing Report...' : '✨ Analyze with AI'}
+                        </button>
+                    </div>
+                    ${isSummarizing ? '<div class="mt-4 text-gray-500 animate-pulse dark:text-gray-400">Analyzing image and generating analysis...</div>' : ''}
+                    ${summaryHtml}
+                    <button id="back-to-reports-btn" class="mt-6 w-full text-center bg-gray-100 text-gray-800 font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors dark:bg-gray-600 dark:text-gray-100 dark:hover:bg-gray-500">Back to My Reports</button>
+                </div>
+            `;
+        }
+        return `
+            <div>
+                <h1 class="text-4xl font-bold text-gray-900 mb-8 dark:text-gray-100">Upload New Clinical Report</h1>
+                <div class="bg-white p-8 rounded-xl shadow-lg max-w-2xl mx-auto dark:bg-gray-700">
+                    ${contentHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    // --- 5. EVENT HANDLERS & LIFECYCLE HOOKS ---
+
+    function escapeHTML(str) {
+        if (!str) return "";
+        return String(str).replace(/[&<>"'`]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' })[ch]);
+    }
+
+    function formatAISummary(text) {
+        if (!text) return "";
+        let s = escapeHTML(text);
+        s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        s = s.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/\n/g, '<br>');
+        s = s.replace(/(\b\d{1,3}(?:[.,]\d{1,3})*(?:\s?(?:mg|g|mmol|µmol|%)?)\b)/g, '<code>$1</code>');
+        return s;
+    }
+
+    async function handleSendMessage() {
+        const inputElement = document.getElementById('user-input');
+        const userInput = inputElement.value.trim();
+        if (!userInput || appState.chat.isAgentTyping) return;
+
+        const today = new Date().toISOString().slice(0, 10);
+        const isTodayLogged = appState.weeklyData.some(log => log.date === today);
+
+        if (isTodayLogged) return;
+
+        const newUserMessage = { id: Date.now(), sender: 'user', text: userInput };
+        setState({ chatHistory: [...appState.chatHistory, newUserMessage] });
+        setState({ isAgentTyping: true }, 'chat');
+        inputElement.value = '';
+
+        try {
+            const { agentResponse } = await processAgentLogic(userInput);
+            const newAgentMessage = { id: Date.now() + 1, sender: 'agent', text: agentResponse };
+            setState({ chatHistory: [...appState.chatHistory, newAgentMessage] });
+        } catch (error) {
+            console.error("Agent processing failed:", error);
+            const errorMessage = { id: Date.now() + 1, sender: 'agent', text: "Sorry, I ran into an error. Please check your API key and try again." };
+            setState({ chatHistory: [...appState.chatHistory, errorMessage] });
+        } finally {
+            setState({ isAgentTyping: false }, 'chat');
+            setTimeout(handleChatScroll, 50);
+        }
+    }
+
+
+    function handleChatScroll() {
+        const chatEndRef = document.getElementById('chat-end-ref');
+        chatEndRef?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    function handleToggleMode() { 
+        const checkbox = document.getElementById('dark-mode-checkbox');
+        if (checkbox) {
+            const isChecked = checkbox.checked;
+            setState({ isDarkMode: isChecked }, 'dashboard');
+            document.body.classList.toggle('dark', isChecked);
+        }
+    }
+
+    // Upload helpers unchanged
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+    async function startUploadSimulation(file) {
+        setState({ fileName: file.name, state: 'progress', progress: 0 }, 'upload');
+        try {
+            currentReportFileBase64 = await fileToBase64(file);
+            currentReportMimeType = file.type; 
+            let currentProgress = 0;
+            const interval = setInterval(() => {
+                currentProgress += 10;
+                setState({ progress: currentProgress }, 'upload');
+                if (currentProgress >= 100) {
+                    clearInterval(interval);
+                    const newReportId = Date.now().toString();
+                    const newReport = {
+                        id: newReportId,
+                        name: file.name,
+                        date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                        status: 'New'
+                    };
+                    setState({ reports: [...appState.reports, newReport] });
+                    setTimeout(() => setState({ state: 'success' }, 'upload'), 500);
+                }
+            }, 150);
+        } catch (error) {
+            console.error("File upload error:", error);
+            setState({ state: 'initial' }, 'upload');
+        }
+    }
+
+    async function handleSummarize() {
+        if (!currentReportFileBase64 || appState.upload.isSummarizing) return;
+        setState({ isSummarizing: true, summary: 'Analyzing image and generating report summary (using Gemini Vision)...' }, 'upload');
+        try {
+            const result = await callGeminiVisionApi(currentReportFileBase64, currentReportMimeType);
+            setState({ summary: result, isSummarizing: false }, 'upload');
+        } catch (error) {
+            const finalError = error.message || "An unknown error occurred during analysis.";
+            setState({ summary: `Final Analysis Failed: ${finalError}`, isSummarizing: false }, 'upload');
+        } finally {
+            currentReportFileBase64 = null;
+        }
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+        if (files && files[0]) {
+            startUploadSimulation(files[0]);
+        }
+    }
+    function handleFileChange(e) {
+        const files = e.target.files;
+        if (files && files[0]) {
+            startUploadSimulation(files[0]);
+        }
+    }
+
+    function moveFocus(currentElement, nextId) {
+        if (currentElement.value.length === currentElement.maxLength) {
+            const nextElement = document.getElementById(nextId);
+            if (nextElement) nextElement.focus();
+            else document.getElementById('verify-otp-btn')?.focus();
+        }
+    }
+
+    // --- clear today's entry functionality (user requested "remove todays input") ---
+    function clearTodaysEntry(confirmPrompt = true) {
+        const today = new Date().toISOString().slice(0, 10);
+        const exist = appState.weeklyData.some(l => l.date === today);
+        
+        if (!exist) {
+             // If triggered from chat, show message there
+             if (appState.currentPage === 'chat') {
+                 setState({ chatHistory: [...appState.chatHistory, { id: Date.now(), sender: 'agent', text: "No entry exists for today to clear." }] });
+             }
+             return;
+        }
+        
+        if (confirmPrompt && !confirm("Clear today's saved entry? This will allow re-entering today's check-in.")) return;
+        appState.weeklyData = appState.weeklyData.filter(l => l.date !== today);
+        saveWeeklyData(); 
+        
+        // reset chat so user can re-enter
+        resetChat(true); 
+
+        // Update dashboard/history visibility
+        generateWeeklyInsight();
+        if (appState.currentPage === 'history') {
+            setState({ currentInsight: null, currentWeeklyReport: null }, 'history');
+        }
+    }
+    
+    // Clear ALL history
+    function clearAllHistory() {
+        if (confirm("Are you sure you want to clear ALL historical check-in data? This action cannot be undone.")) {
+            appState.weeklyData = [];
+            saveWeeklyData();
+            setState({ insights: [{ id: 1, type: "Data Cleared", text: "All check-in history has been removed." }] }, 'dashboard');
+            setState({ currentInsight: null, currentWeeklyReport: null }, 'history');
+        }
+    }
+
+    // --- 6. MAIN RENDERER ---
+
+    function renderApp() {
+        const appContainer = document.getElementById('app');
+        const { currentPage } = appState;
+        const isAuthPage = ['login', 'signup', 'otp'].includes(currentPage);
+
+        if (appState.dashboard.isDarkMode) document.body.classList.add('dark'); else document.body.classList.remove('dark');
+
+        document.getElementById('app').innerHTML = '';
+
+        if (isAuthPage) {
+            let contentHtml = '';
+            switch (currentPage) {
+                case 'login': contentHtml = LoginPage(); break;
+                case 'signup': contentHtml = SignupPage(); break;
+                case 'otp': contentHtml = OTPPage(); break;
+            }
+            appContainer.innerHTML = contentHtml;
+        } else {
+            let mainContent = '';
+            switch (currentPage) {
+                case 'dashboard': mainContent = DashboardPage(); break;
+                case 'chat': mainContent = ChatPage(); break;
+                case 'history': mainContent = HistoryPage(); break; // NEW PAGE
+                case 'reports': mainContent = ReportsPage(); break;
+                case 'upload-report': mainContent = UploadReportPage(); break;
+                default: mainContent = DashboardPage(); break;
+            }
+            appContainer.innerHTML = `
+                <div class="flex h-screen">
+                    ${Sidebar()}
+                    <main id="main-content" class="flex-1 p-6 md:p-10 overflow-y-auto">
+                        ${mainContent}
+                    </main>
+                </div>
+            `;
+        }
+
+        // Attach event listeners
+        const elements = [
+            { id: 'nav-dashboard', page: 'dashboard' },
+            { id: 'nav-chat', page: 'chat' },
+            { id: 'nav-history', page: 'history' }, // NEW
+            { id: 'nav-reports', page: 'reports' }, 
+            { id: 'nav-logout', page: 'login' },
+            { id: 'link-signup', page: 'signup' },
+            { id: 'link-login', page: 'login' },
+            
+            // Clinical Report Upload buttons
+            { id: 'reports-upload-btn-main', page: 'upload-report' },
+            { id: 'reports-upload-btn-top', page: 'upload-report' },
+
+            { id: 'back-to-reports-btn', page: 'reports' },
+            { id: 'login-btn', page: 'dashboard' },
+            { id: 'signup-btn', page: 'otp' },
+            { id: 'verify-otp-btn', page: 'dashboard' }
+        ];
+        elements.forEach(item => {
+            const el = document.getElementById(item.id);
+            if (el) {
+                el.onclick = (e) => { e.preventDefault(); navigateTo(item.page); };
+            }
+        });
+
+        // Dashboard-specific listeners
+        // Dashboard-specific listeners
+    if (currentPage === 'dashboard') {
+        const toggleElement = document.getElementById('dark-mode-checkbox');
+        if (toggleElement) toggleElement.onchange = handleToggleMode;
+
+        // new dashboard CTA buttons
+        const startChatBtn = document.getElementById('start-chat-btn');
+        const reportsUploadBtn = document.getElementById('reports-upload-btn');
+        const viewInsightsBtn = document.getElementById('view-insights-btn');
+
+        if (startChatBtn) startChatBtn.onclick = (e) => { e.preventDefault(); navigateTo('chat'); };
+        if (reportsUploadBtn) reportsUploadBtn.onclick = (e) => { e.preventDefault(); navigateTo('upload-report'); };
+        if (viewInsightsBtn) viewInsightsBtn.onclick = (e) => { e.preventDefault(); navigateTo('history'); };
+    }
+
+
+        // Chat page listeners
+        if (currentPage === 'chat') {
+            setTimeout(handleChatScroll, 0);
+            const sendBtn = document.getElementById('send-btn');
+            const userInput = document.getElementById('user-input');
+            if (sendBtn) sendBtn.onclick = handleSendMessage;
+            if (userInput) userInput.onkeypress = (e) => { if (e.key === 'Enter') handleSendMessage(); };
+            const clearSmall = document.getElementById('clear-today-small');
+            if (clearSmall) clearSmall.onclick = () => clearTodaysEntry(true);
+        }
+        
+        // History page listeners (NEW)
+        if (currentPage === 'history') {
+            const btnDaily = document.getElementById('generate-daily-btn');
+            const btnWeekly = document.getElementById('generate-weekly-btn');
+            const btnClearToday = document.getElementById('history-clear-today-btn');
+            const btnClearAll = document.getElementById('history-clear-all-btn');
+
+            if (btnDaily) btnDaily.onclick = () => generateHealthReport('daily');
+            if (btnWeekly) btnWeekly.onclick = () => generateHealthReport('weekly');
+            if (btnClearToday) btnClearToday.onclick = () => clearTodaysEntry(true);
+            if (btnClearAll) btnClearAll.onclick = clearAllHistory;
+        }
+
+        // Upload listeners
+        if (currentPage === 'upload-report') {
+            const uploadBox = document.getElementById('upload-box');
+            const fileInput = document.getElementById('file-input');
+            const summarizeBtn = document.getElementById('summarize-btn');
+            if (uploadBox) {
+                uploadBox.addEventListener('dragover', (e) => e.preventDefault());
+                uploadBox.addEventListener('drop', handleDrop);
+                uploadBox.addEventListener('click', () => fileInput.click());
+            }
+            if (fileInput) fileInput.onchange = handleFileChange;
+            if (summarizeBtn) summarizeBtn.onclick = handleSummarize;
+        }
+    }
+
+    // --- 7. INITIALIZATION ---
+    window.onload = function() {
+        initializeAppState();
+        renderApp();
+    };
+</script>
+</body>
+</html>
