@@ -1,0 +1,13 @@
+{
+  "name": "vitalsync",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --root frontend",
+    "build": "vite build --root frontend",
+    "preview": "vite preview --host",
+    "supabase:function:deploy": "supabase functions deploy vitalsync-ai --project-ref aiavwyjuukujdvjzjesu"
+  },
+  "devDependencies": {"vite":"^7.1.3"}
+}
